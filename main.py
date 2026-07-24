@@ -1,41 +1,72 @@
-from flask import Flask, render_template, url_for
-import random
-import os
+# Import
+from flask import Flask, render_template, request
 
-print(os.getcwd())
 
 app = Flask(__name__)
+# formula hitung kWH
+def result_calculate(size, lights, device):
+    # Variabel yang memungkinkan penghitungan konsumsi energi peralatan
+    home_coef = 100
+    light_coef = 0.04
+    devices_coef = 5   
+    return size * home_coef + lights * light_coef + device * devices_coef 
 
-# Home/1st page
-@app.route("/")
-def pertama():
-    # <a> anchor tag with its attribute
-    return "<h1>Hello, World!</h1><br><p>Nice to see you</p><p>please check</p><a href='/random_fact'>View a random fact!</a><br><a href='/modern_fact'>View a modern fact!</a><br><a href='/random_image'>View a random image!</a><br>"
-    
-# 2nd page
-@app.route("/random_fact")
-
-def kedua():
-    txt_name = random.choice(os.listdir("fact_list"))
-    # formatted string
-    with open(f'fact_list/{txt_name}', 'r') as f:
-        document = f.read()
-    return f'{document}'
-# 2nd page
-@app.route('/modern_fact')
+# Halaman pertama
+@app.route('/')
 def index():
-    return render_template('dasar.html')#folder templates
+    return render_template('index.html')
 
-@app.route("/random_image")
-def random_image():
-    images = [
-        "img/dice.jpg",
-        "img/mappa.jpg",
-        "img/parrott.jpg",
-        "img/wit.png"
-    ]
-    img_url = url_for("static", filename=random.choice(images))
-    return f'<h1>Random Image</h1><img src="{img_url}" width="300">'
+# Halaman kedua
+@app.route('/<size>')
+def lights(size):
+    return render_template(
+                            'lights.html', 
+                            size=size
+                           )
 
-app.run(debug=True)
+# Halaman ketiga
+@app.route('/<size>/<lights>')
+def electronics(size, lights):
+    return render_template(
+                            'electronics.html',
+                            size = size, 
+                            lights = lights                           
+                           )
+
+# Perhitungan akhir
+@app.route('/<size>/<lights>/<device>')
+def end(size, lights, device):
+    return render_template('end.html', 
+                            result=result_calculate(int(size),
+                                                    int(lights), 
+                                                    int(device)
+                                                    )
+                        )
+
+# Formulir
+@app.route('/form')
+def form():
+    return render_template('form.html')
+
+#Hasil formulir
+@app.route('/submit', methods=['GET','POST'])
+def submit_form():
+    name = request.form['name']
+    email = request.form['email']
+    address = request.form['address']
+    date = request.form['date']
+	# You can save your data or email it
+    with open('form.txt', 'a', encoding='utf-8') as t:
+        text1 = "\n"
+        text1 += name
+        text2 = "\n"
+        text2 += email
+        text3 = "\n"
+        text3 += address
+        text4 = "\n"
+        text4 += date    
+        t.write(text1 + text2 + text3 + text4)
+    return render_template('form_result.html', name=name, email=email, date = date, address = address)
+    
+app.run(host='0.0.0.0', debug=True)
 
